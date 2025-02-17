@@ -1,0 +1,8 @@
+Spark ====
+
+Spark is a data processing platform
+
+Table contain 2 things
+- Data
+- Schema
+
