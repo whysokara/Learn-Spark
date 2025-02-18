@@ -1,8 +1,4 @@
-Spark ====
+Tutorial = https://www.youtube.com/watch?v=94w6hPk7nkM
 
-Spark is a data processing platform
-
-Table contain 2 things
-- Data
-- Schema
-
+Spark Architecture ====
+Driver Program => Cluster Manager => Worker Node (Executor)Cache, task
