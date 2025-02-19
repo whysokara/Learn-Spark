@@ -1,4 +1,6 @@
 ###### Tutorial = https://www.youtube.com/watch?v=94w6hPk7nkM
+###### File uploaded to /FileStore/tables/BigMart_Sales.csv
+###### File uploaded to /FileStore/tables/drivers.json
 
 ### Spark Architecture 
 ``` Driver Program => Cluster Manager => Worker Node (Executor)Cache, task ```
@@ -10,3 +12,5 @@
 * Partioning
 
 ``` Job (code we write in cell) => Stage => Task ```
+
+#### Lazy Function
