@@ -1,9 +1,4 @@
 # Databricks notebook source
-# MAGIC %md
-# MAGIC ### Data Reading
-
-# COMMAND ----------
-
 dbutils.fs.ls('/FileStore/tables')
 csv = '/FileStore/tables/BigMart_Sales.csv'
 json = '/FileStore/tables/drivers.json'
@@ -19,149 +14,85 @@ df = spark.read \
 
 # COMMAND ----------
 
-display(df)
+df.display()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ##### Data Reading JSON
-
-# COMMAND ----------
-
-json_df = spark.read \
-            .format('json')\
-            .option('inferSchema', True)\
-            .option('header', True)\
-            .option('multiLine', False)\
-            .load(json)
-
-# COMMAND ----------
-
-display(json_df)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### Schema Defination
-
-# COMMAND ----------
-
-df.printSchema()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC DDL Schema
+# MAGIC ### UNION and UNION BY Name
 
 # COMMAND ----------
 
 
-my_ddl_schema = '''
-                    Item_Identifier STRING,
-                    Item_Weight DOUBLE, 
-                    Item_Fat_Content STRING, 
-                    Item_Visibility DOUBLE,
-                    Item_Type STRING,
-                    Item_MRP DOUBLE,
-                    Outlet_Identifier STRING,
-                    Outlet_Establishment_Year INT,
-                    Outlet_Size STRING,
-                    Outlet_Location_Type STRING, 
-                    Outlet_Type STRING,
-                    Item_Outlet_Sales DOUBLE 
+data1 = [('1','kad'),
+        ('2','sid')]
+schema1 = 'id STRING, name STRING' 
 
-                ''' 
+df1 = spark.createDataFrame(data1,schema1)
+
+data2 = [('3','rahul'),
+        ('4','jas'),
+        ('2','sid')]
+schema2 = 'id STRING, name STRING' 
+
+df2 = spark.createDataFrame(data2,schema2)
 
 # COMMAND ----------
 
-df = spark.read \
-    .format('csv')\
-    .schema(my_ddl_schema)\
-    .option('header', True)\
-    .load(csv)
+df1.display()
+df2.display()
 
 # COMMAND ----------
 
-df.printSchema()
+new_df = df1.union(df2)
+# new_df = df1.unionByName(df2) when column order is different
+
+# COMMAND ----------
+
+new_df.display()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC SELECT
+# MAGIC ### String Functions
 
 # COMMAND ----------
 
-
-
-## df_sel = df.select('Item_Identifier', 'Item_Weight', 'Item_Fat_Content')
-df_sel = df.select(col('Item_Identifier'), col('Item_Weight'), col('Item_Fat_Content'))
-df_sel.display()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### ALIAS
-
-# COMMAND ----------
-
-df.select(col('Item_Identifier').alias('Item_ID')).display()
+df.select(initcap('Item_Type')).display()
+# df.select(lower('Item_Type')).display()
+# df.select(upper('Item_Type')).display()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### FILTER/WHERE
+# MAGIC ### Date Functions
 
 # COMMAND ----------
 
-df.filter(col('Item_Fat_Content') == 'Regular').display()
+df = df.withColumn('Current Date',current_date())
+df.display()
 
 # COMMAND ----------
 
-df.filter((col('Item_Type') == 'Soft Drinks') & (col('Item_Weight') < 10)).display()
+df = df.withColumn('A week later', date_add(col('Current date'),7))
+# df = df.withColumn('A week later', date_format(date_add(col('Current date'),7),'dd-MM-yyyy'))
 
 # COMMAND ----------
 
-df.filter((col('Outlet_Location_Type').isin('Tier 1','Tier 2')) & (col('Outlet_Size').isNull())).display()
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC #### withColumnRenamed
-
-# COMMAND ----------
-
-df = df.withColumnRenamed('Item_Weight', 'Item_Wt')
+df.display()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### withColumn
+# MAGIC ### DateDiff
 
 # COMMAND ----------
 
-df = df.withColumn('flag', lit("new"))
+## Current minus 7 days
+df = df.withColumn('Date Difference',datediff('A week later','Current Date'))
 
-# COMMAND ----------
 
-df = df.withColumn('Multiply', col("Item_Wt")*col("Item_MRP"))
-
-# COMMAND ----------
-
-    df.display()
-
-# COMMAND ----------
-
-df.withColumn('Item_Fat_Content',regexp_replace(col('Item_Fat_Content'),'Low Fat','LF') )\
-    .withColumn('Item_Fat_Content',regexp_replace(col('Item_Fat_Content'),'Regular','Reg') ).display()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC #### Type Casting
-
-# COMMAND ----------
-
-df = df.withColumn('Item_Wt',col('Item_Wt').cast(StringType()))
 
 # COMMAND ----------
 
@@ -169,54 +100,20 @@ df.display()
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC Order By
-
-# COMMAND ----------
-
-df = df.dropna()
-
-# COMMAND ----------
-
-df = df.sort(col('Item_Wt').desc())
-
-# COMMAND ----------
+df = df.withColumn('A week laterr',date_format('A week later','dd-MM-yyyy'))
 
 df.display()
-
-# COMMAND ----------
-
-df = df.sort(col('Item_Wt').asc())
-
-# COMMAND ----------
-
-df.sort(['Item_Weight','Item_Visibility'],ascending = [0,0]).display()
-
-# COMMAND ----------
-
-df = df.withColumnRenamed('Item_Wt','Item_Weight')
+     
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Limit
-
-# COMMAND ----------
-
-df.limit(9).display()
-
-# COMMAND ----------
-
-df.drop('Item_Visibility').display()
-
-# COMMAND ----------
-
-df.drop('Item_Visibility','Item_Type').display()
+# MAGIC ### Handling Nulls#
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Drop Duplicates
+# MAGIC ##### Dropping Nulls
 
 # COMMAND ----------
 
@@ -224,7 +121,38 @@ df.count()
 
 # COMMAND ----------
 
-df.drop_duplicates().display()
+df.dropna('all').count()
+
+# COMMAND ----------
+
+df.dropna('any').count()
+
+# COMMAND ----------
+
+df.dropna(subset='Outlet_Size').count()
+
+# COMMAND ----------
+
+# MAGIC %md 
+# MAGIC ##### Filling Nulls
+
+# COMMAND ----------
+
+df.display()
+
+# COMMAND ----------
+
+df = df.withColumn('Item_Weight',col('Item_Weight').cast(StringType()))
+
+# COMMAND ----------
+
+# df.fillna(subset=['Outlet_Size'] = 'Midish')
+df.fillna('NA Filler').display()
+
+# COMMAND ----------
+
+## Fill NA for specific Column
+df.fillna('Specific Filler', subset='Outlet_Size').display()
 
 # COMMAND ----------
 
