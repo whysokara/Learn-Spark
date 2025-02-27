@@ -15,4 +15,4 @@
 ``` Job (code we write in cell) => Stage => Task ```
 
 #### Lazy Function
-##### doesnt execute until called an action
+##### doesnt execute until called an actionq
